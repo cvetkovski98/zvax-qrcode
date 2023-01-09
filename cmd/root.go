@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var cfgFile string
 var root = &cobra.Command{
 	Short: "QR code microservice",
 	Long:  `QR code microservice`,
@@ -17,13 +18,14 @@ var root = &cobra.Command{
 
 func init() {
 	cobra.OnInitialize(configure)
+	root.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.dev.yml", "config file name")
 	root.AddCommand(runCommand)
 	root.AddCommand(migrateCommand)
 	root.AddCommand(createBucketCommand)
 }
 
 func configure() {
-	if err := config.LoadConfig("config.dev.yaml"); err != nil {
+	if err := config.LoadConfig(cfgFile); err != nil {
 		panic(err)
 	}
 }
