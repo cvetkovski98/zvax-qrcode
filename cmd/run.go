@@ -8,6 +8,7 @@ import (
 	"github.com/cvetkovski98/zvax-common/pkg/postgresql"
 	"github.com/cvetkovski98/zvax-qrcode/internal/config"
 	"github.com/cvetkovski98/zvax-qrcode/internal/delivery"
+	"github.com/cvetkovski98/zvax-qrcode/internal/model/migrations"
 	"github.com/cvetkovski98/zvax-qrcode/internal/repository"
 	"github.com/cvetkovski98/zvax-qrcode/internal/service"
 	"github.com/cvetkovski98/zvax-qrcode/pkg/minio"
@@ -46,6 +47,12 @@ func run(cmd *cobra.Command, args []string) {
 	minIOClient, err := minio.NewMinioClient(&cfg.MinIO)
 	if err != nil {
 		log.Fatalf("failed to connect to minio: %v", err)
+	}
+	if err := postgresql.Migrate(cmd.Context(), db, migrations.Migrations); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
+	if err := minio.CreateBucket(cmd.Context(), minIOClient, cfg.MinIO.BucketName); err != nil {
+		log.Fatalf("failed to create a bucket: %v", err)
 	}
 	qrRepository := repository.NewPgQRCodeRepository(db)
 	qrObjStore := repository.NewMinioObjectStore(minIOClient)
