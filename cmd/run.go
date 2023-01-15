@@ -51,11 +51,12 @@ func run(cmd *cobra.Command, args []string) {
 	if err := postgresql.Migrate(cmd.Context(), db, migrations.Migrations); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
-	if err := minio.CreateBucket(cmd.Context(), minIOClient, cfg.MinIO.BucketName); err != nil {
+
+	qrObjStore := repository.NewMinioObjectStore(minIOClient)
+	if err := qrObjStore.CreateBucket(cmd.Context(), cfg.MinIO.BucketName); err != nil {
 		log.Fatalf("failed to create a bucket: %v", err)
 	}
 	qrRepository := repository.NewPgQRCodeRepository(db)
-	qrObjStore := repository.NewMinioObjectStore(minIOClient)
 	qrService := service.NewQRCodeService(qrRepository, qrObjStore)
 	qrGrpc := delivery.NewQRCodeServer(qrService)
 	server := grpc.NewServer()

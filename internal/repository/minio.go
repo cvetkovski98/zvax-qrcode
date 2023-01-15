@@ -3,8 +3,7 @@ package repository
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"fmt"
+	"log"
 	"net/url"
 	"time"
 
@@ -16,25 +15,19 @@ type minioObjectStore struct {
 	client *minio.Client
 }
 
-func (*minioObjectStore) getObjectName(email string) string {
-	emailBytes := []byte(email)
-	emailHash := sha256.Sum256(emailBytes)
-	return fmt.Sprintf("%x.png", emailHash)
-}
-
 func (s *minioObjectStore) GetResourceLocation(ctx context.Context, bucket string, email string) (*url.URL, error) {
 	expiry := 7 * 24 * time.Hour
-	objectName := s.getObjectName(email)
+	objectName := getObjectName(email)
 	return s.client.PresignedGetObject(ctx, bucket, objectName, expiry, nil)
 }
 
 func (s *minioObjectStore) RemoveQR(ctx context.Context, bucket string, email string) error {
-	objectName := s.getObjectName(email)
+	objectName := getObjectName(email)
 	return s.client.RemoveObject(ctx, bucket, objectName, minio.RemoveObjectOptions{})
 }
 
 func (s *minioObjectStore) UploadQR(ctx context.Context, bucket string, email string, content []byte) (string, error) {
-	objectName := s.getObjectName(email)
+	objectName := getObjectName(email)
 	contentReader := bytes.NewReader(content)
 	contentLenght := int64(len(content))
 	options := minio.PutObjectOptions{
@@ -44,6 +37,25 @@ func (s *minioObjectStore) UploadQR(ctx context.Context, bucket string, email st
 		return "", err
 	}
 	return objectName, nil
+}
+
+func (s *minioObjectStore) CreateBucket(ctx context.Context, bucketName string) error {
+	if err := s.client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
+		exists, errBucketExists := s.client.BucketExists(ctx, bucketName)
+		if errBucketExists == nil && exists {
+			log.Printf("We already own %s", bucketName)
+		} else {
+			return err
+		}
+	}
+	log.Printf("Successfully created %s", bucketName)
+	if err := s.client.SetBucketPolicy(ctx, bucketName, `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::`+bucketName+`/*"]}]} `); err != nil {
+		log.Printf("Failed to set bucket permissions")
+		return err
+	}
+	log.Printf("Successfully set %s permissions", bucketName)
+	return nil
+
 }
 
 func NewMinioObjectStore(client *minio.Client) qrcode.ObjectStore {
