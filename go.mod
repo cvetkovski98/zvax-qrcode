@@ -5,6 +5,7 @@ go 1.19
 replace github.com/cvetkovski98/zvax-common => ../common
 
 require (
+	cloud.google.com/go/storage v1.23.0
 	github.com/boombuler/barcode v1.0.1
 	github.com/minio/minio-go/v7 v7.0.45
 	github.com/spf13/cobra v1.6.1
@@ -12,6 +13,23 @@ require (
 	github.com/uptrace/bun v1.1.9
 	google.golang.org/grpc v1.51.0
 	google.golang.org/protobuf v1.28.1
+)
+
+require (
+	cloud.google.com/go v0.104.0 // indirect
+	cloud.google.com/go/compute v1.12.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.1 // indirect
+	cloud.google.com/go/iam v0.3.0 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.6.0 // indirect
+	github.com/googleapis/go-type-adapters v1.0.0 // indirect
+	go.opencensus.io v0.23.0 // indirect
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
+	google.golang.org/api v0.102.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 )
 
 require (
