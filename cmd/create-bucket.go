@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/cvetkovski98/zvax-qrcode/internal/config"
 	"github.com/cvetkovski98/zvax-qrcode/internal/repository"
-	"github.com/cvetkovski98/zvax-qrcode/pkg/minio"
 	"github.com/spf13/cobra"
 )
 
@@ -19,17 +18,17 @@ func init() {
 }
 
 func createBucket(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
 	cfg := config.GetConfig()
-	minioClient, err := minio.NewMinioClient(&cfg.MinIO)
+	store, err := repository.Create(ctx, cfg)
 	if err != nil {
 		return err
 	}
-	store := repository.NewMinioObjectStore(minioClient)
-	bucket := cfg.MinIO.BucketName
+	bucket := cfg.ObjectStore.BucketName
 	if cmd.Flag("bucket").Value.String() != "" {
 		bucket = cmd.Flag("bucket").Value.String()
 	}
-	if err = store.CreateBucket(cmd.Context(), bucket); err != nil {
+	if err := store.CreateBucket(ctx, bucket); err != nil {
 		return err
 	}
 	return nil

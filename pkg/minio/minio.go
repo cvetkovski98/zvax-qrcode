@@ -6,7 +6,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-func NewMinioClient(cfg *config.MinIO) (*minio.Client, error) {
+func NewMinioClient(cfg *config.ObjectStore) (*minio.Client, error) {
 	return minio.New(cfg.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.RootUser, cfg.RootPassword, ""),
 		Secure: cfg.UseSSL,

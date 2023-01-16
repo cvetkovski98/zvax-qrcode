@@ -21,8 +21,7 @@ func (s *minioObjectStore) GetResourceLocation(ctx context.Context, bucket strin
 	return s.client.PresignedGetObject(ctx, bucket, objectName, expiry, nil)
 }
 
-func (s *minioObjectStore) RemoveQR(ctx context.Context, bucket string, email string) error {
-	objectName := getObjectName(email)
+func (s *minioObjectStore) RemoveQR(ctx context.Context, bucket string, objectName string) error {
 	return s.client.RemoveObject(ctx, bucket, objectName, minio.RemoveObjectOptions{})
 }
 

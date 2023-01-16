@@ -12,7 +12,7 @@ import (
 	qrutil "github.com/cvetkovski98/zvax-qrcode/internal/utils/qr"
 )
 
-const bucket = "qrcodes"
+var bucket = "zvax-qrcodes-v2"
 
 type impl struct {
 	r  qrcode.Repository
@@ -50,14 +50,12 @@ func (s *impl) CreateQRCode(ctx context.Context, request *dto.CreateQRCode) (*dt
 	if !request.Stored {
 		return mapper.QRDtoFromContent(content), nil
 	}
-
 	objectName, err := s.os.UploadQR(ctx, bucket, *request.Email, content)
 	if err != nil {
 		return nil, err
 	}
 	url, err := s.os.GetResourceLocation(ctx, bucket, objectName)
 	if err != nil {
-		go s.os.RemoveQR(ctx, bucket, *request.Email)
 		return nil, err
 	}
 	QRin := &model.QR{
@@ -65,7 +63,6 @@ func (s *impl) CreateQRCode(ctx context.Context, request *dto.CreateQRCode) (*dt
 	}
 	_, err = s.r.InsertOne(ctx, QRin)
 	if err != nil {
-		go s.os.RemoveQR(ctx, bucket, *request.Email)
 		return nil, err
 	}
 	return mapper.QRDtoFromModel(QRin, url), nil

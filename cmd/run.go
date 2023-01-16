@@ -11,7 +11,6 @@ import (
 	"github.com/cvetkovski98/zvax-qrcode/internal/model/migrations"
 	"github.com/cvetkovski98/zvax-qrcode/internal/repository"
 	"github.com/cvetkovski98/zvax-qrcode/internal/service"
-	"github.com/cvetkovski98/zvax-qrcode/pkg/minio"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
@@ -33,6 +32,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	ctx := cmd.Context()
 	lis, err := net.Listen(network, address)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -44,16 +44,14 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 	defer db.Close()
-	minIOClient, err := minio.NewMinioClient(&cfg.MinIO)
-	if err != nil {
-		log.Fatalf("failed to connect to minio: %v", err)
-	}
-	if err := postgresql.Migrate(cmd.Context(), db, migrations.Migrations); err != nil {
+	if err := postgresql.Migrate(ctx, db, migrations.Migrations); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
-
-	qrObjStore := repository.NewMinioObjectStore(minIOClient)
-	if err := qrObjStore.CreateBucket(cmd.Context(), cfg.MinIO.BucketName); err != nil {
+	qrObjStore, err := repository.Create(ctx, cfg)
+	if err != nil {
+		log.Fatalf("failed to connect to object store: %v", err)
+	}
+	if err := qrObjStore.CreateBucket(ctx, cfg.ObjectStore.BucketName); err != nil {
 		log.Fatalf("failed to create a bucket: %v", err)
 	}
 	qrRepository := repository.NewPgQRCodeRepository(db)

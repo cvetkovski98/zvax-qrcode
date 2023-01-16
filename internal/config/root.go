@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	PostgreSQL config.PostgreSQL `mapstructure:"db"`
-	MinIO      config.MinIO      `mapstructure:"minio"`
+	PostgreSQL  config.PostgreSQL  `mapstructure:"db"`
+	ObjectStore config.ObjectStore `mapstructure:"object_store"`
 }
 
 func LoadConfig(name string) error {
