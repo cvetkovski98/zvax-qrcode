@@ -18,7 +18,7 @@ var root = &cobra.Command{
 
 func init() {
 	cobra.OnInitialize(configure)
-	root.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.dev.yml", "config file name")
+	root.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.dev.yaml", "config file name")
 	root.AddCommand(runCommand)
 	root.AddCommand(migrateCommand)
 	root.AddCommand(createBucketCommand)
