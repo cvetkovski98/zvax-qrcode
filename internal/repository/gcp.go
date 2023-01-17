@@ -15,15 +15,15 @@ var projectID = "zvax-project"
 
 type gcpObjectStore struct {
 	client *storage.Client
+	bucket string
 }
 
 // CreateBucket implements qrcode.ObjectStore
-func (gcp *gcpObjectStore) CreateBucket(ctx context.Context, bucketName string) error {
-	if _, err := gcp.client.Bucket(bucketName).Attrs(ctx); err == nil {
-		log.Printf("we already own bucket %s", bucketName)
+func (gcp *gcpObjectStore) CreateBucket(ctx context.Context) error {
+	if _, err := gcp.client.Bucket(gcp.bucket).Attrs(ctx); err == nil {
+		log.Printf("we already own bucket %s", gcp.bucket)
 		return nil
 	}
-
 	bucketAttrs := &storage.BucketAttrs{
 		Location: "europe-west6",
 		UniformBucketLevelAccess: storage.UniformBucketLevelAccess{
@@ -31,17 +31,17 @@ func (gcp *gcpObjectStore) CreateBucket(ctx context.Context, bucketName string) 
 			LockedTime: time.Now().Add(90 * 25 * time.Hour), // 90 days
 		},
 	}
-	if err := gcp.client.Bucket(bucketName).Create(ctx, projectID, bucketAttrs); err != nil {
-		log.Printf("failed to create bucket %s", bucketName)
+	if err := gcp.client.Bucket(gcp.bucket).Create(ctx, projectID, bucketAttrs); err != nil {
+		log.Printf("failed to create bucket %s", gcp.bucket)
 		return err
 	}
-	log.Printf("successfully created bucket %s", bucketName)
+	log.Printf("successfully created bucket %s", gcp.bucket)
 	return nil
 }
 
 // GetResourceLocation implements qrcode.ObjectStore
-func (gcp *gcpObjectStore) GetResourceLocation(ctx context.Context, bucketName string, objectName string) (*url.URL, error) {
-	object := gcp.client.Bucket(bucketName).Object(objectName)
+func (gcp *gcpObjectStore) GetResourceLocation(ctx context.Context, objectName string) (*url.URL, error) {
+	object := gcp.client.Bucket(gcp.bucket).Object(objectName)
 	attrs, err := object.Attrs(ctx)
 	if err != nil {
 		return nil, err
@@ -51,15 +51,15 @@ func (gcp *gcpObjectStore) GetResourceLocation(ctx context.Context, bucketName s
 }
 
 // RemoveQR implements qrcode.ObjectStore
-func (gcp *gcpObjectStore) RemoveQR(ctx context.Context, bucketName string, email string) error {
+func (gcp *gcpObjectStore) RemoveQR(ctx context.Context, email string) error {
 	objectName := getObjectName(email)
-	return gcp.client.Bucket(bucketName).Object(objectName).Delete(ctx)
+	return gcp.client.Bucket(gcp.bucket).Object(objectName).Delete(ctx)
 }
 
 // UploadQR implements qrcode.ObjectStore
-func (gcp *gcpObjectStore) UploadQR(ctx context.Context, bucketName string, email string, content []byte) (string, error) {
+func (gcp *gcpObjectStore) UploadQR(ctx context.Context, email string, content []byte) (string, error) {
 	objectName := getObjectName(email)
-	object := gcp.client.Bucket(bucketName).Object(objectName)
+	object := gcp.client.Bucket(gcp.bucket).Object(objectName)
 	writer := object.NewWriter(ctx)
 	if _, err := writer.Write(content); err != nil {
 		return "", err
@@ -74,6 +74,9 @@ func (gcp *gcpObjectStore) UploadQR(ctx context.Context, bucketName string, emai
 	return objectName, nil
 }
 
-func NewGCPObjectStore(client *storage.Client) qrcode.ObjectStore {
-	return &gcpObjectStore{client: client}
+func NewGCPObjectStore(client *storage.Client, bucket string) qrcode.ObjectStore {
+	return &gcpObjectStore{
+		client: client,
+		bucket: bucket,
+	}
 }

@@ -20,15 +20,14 @@ func init() {
 func createBucket(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	cfg := config.GetConfig()
+	if cmd.Flag("bucket").Value.String() != "" {
+		cfg.ObjectStore.BucketName = cmd.Flag("bucket").Value.String()
+	}
 	store, err := repository.Create(ctx, cfg)
 	if err != nil {
 		return err
 	}
-	bucket := cfg.ObjectStore.BucketName
-	if cmd.Flag("bucket").Value.String() != "" {
-		bucket = cmd.Flag("bucket").Value.String()
-	}
-	if err := store.CreateBucket(ctx, bucket); err != nil {
+	if err := store.CreateBucket(ctx); err != nil {
 		return err
 	}
 	return nil

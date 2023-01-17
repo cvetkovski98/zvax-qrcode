@@ -13,8 +13,8 @@ type Repository interface {
 }
 
 type ObjectStore interface {
-	RemoveQR(context.Context, string, string) error
-	UploadQR(context.Context, string, string, []byte) (string, error)
-	GetResourceLocation(context.Context, string, string) (*url.URL, error)
-	CreateBucket(context.Context, string) error
+	RemoveQR(ctx context.Context, email string) error
+	UploadQR(ctx context.Context, email string, content []byte) (string, error)
+	GetResourceLocation(ctx context.Context, objectName string) (*url.URL, error)
+	CreateBucket(ctx context.Context) error
 }

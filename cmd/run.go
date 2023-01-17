@@ -51,7 +51,7 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("failed to connect to object store: %v", err)
 	}
-	if err := qrObjStore.CreateBucket(ctx, cfg.ObjectStore.BucketName); err != nil {
+	if err := qrObjStore.CreateBucket(ctx); err != nil {
 		log.Fatalf("failed to create a bucket: %v", err)
 	}
 	qrRepository := repository.NewPgQRCodeRepository(db)

@@ -17,13 +17,13 @@ func Create(ctx context.Context, cfg *config.Config) (qrcode.ObjectStore, error)
 		if err != nil {
 			return nil, err
 		}
-		return NewMinioObjectStore(client), nil
+		return NewMinioObjectStore(client, cfg.ObjectStore.BucketName), nil
 	case "GCP":
 		client, err := gcp.NewGCPClient(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return NewGCPObjectStore(client), nil
+		return NewGCPObjectStore(client, cfg.ObjectStore.BucketName), nil
 	}
 	return nil, fmt.Errorf("unsupported repository type: %s", cfg.ObjectStore.Type)
 }
