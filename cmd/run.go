@@ -3,8 +3,10 @@ package cmd
 import (
 	"log"
 	"net"
+	"sync"
 
 	"github.com/cvetkovski98/zvax-common/gen/pbqr"
+	"github.com/cvetkovski98/zvax-common/pkg/healthz"
 	"github.com/cvetkovski98/zvax-common/pkg/postgresql"
 	"github.com/cvetkovski98/zvax-qrcode/internal/config"
 	"github.com/cvetkovski98/zvax-qrcode/internal/delivery"
@@ -33,11 +35,6 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) {
 	ctx := cmd.Context()
-	lis, err := net.Listen(network, address)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	log.Printf("Listening on %s://%s...", network, address)
 	cfg := config.GetConfig()
 	db, err := postgresql.NewPgDb(&cfg.PostgreSQL)
 	if err != nil {
@@ -59,7 +56,28 @@ func run(cmd *cobra.Command, args []string) {
 	qrGrpc := delivery.NewQRCodeServer(qrService)
 	server := grpc.NewServer()
 	pbqr.RegisterQRCodeServer(server, qrGrpc)
-	if err := server.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+	go func() {
+		healtzSrv := healthz.CreateServer(80)
+		if err := healtzSrv.ListenAndServe(); err != nil {
+			log.Printf("error running healthz server: %v", err)
+		}
+		log.Println("Running healthz...")
+		wg.Done()
+	}()
+
+	go func() {
+		lis, err := net.Listen(network, address)
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+		if err := server.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+		log.Printf("Listening on %s://%s...", network, address)
+		wg.Done()
+	}()
+	wg.Wait()
 }
